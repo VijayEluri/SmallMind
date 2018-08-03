@@ -68,23 +68,26 @@ public abstract class HibernateDao<I extends Serializable & Comparable<I>, D ext
   @Override
   public D get (Class<D> durableClass, I id) {
 
-    VectoredDao<I, D> vectoredDao;
-    D durable;
+    if (id != null) {
 
-    if ((vectoredDao = getVectoredDao()) == null) {
-      if ((durable = acquire(durableClass, id)) != null) {
+      VectoredDao<I, D> vectoredDao;
+      D durable;
 
-        return durable;
-      }
-    } else {
-      if ((durable = vectoredDao.get(durableClass, id)) != null) {
+      if ((vectoredDao = getVectoredDao()) == null) {
+        if ((durable = acquire(durableClass, id)) != null) {
 
-        return durable;
-      }
+          return durable;
+        }
+      } else {
+        if ((durable = vectoredDao.get(durableClass, id)) != null) {
 
-      if ((durable = acquire(durableClass, id)) != null) {
+          return durable;
+        }
 
-        return vectoredDao.persist(durableClass, durable, UpdateMode.SOFT);
+        if ((durable = acquire(durableClass, id)) != null) {
+
+          return vectoredDao.persist(durableClass, durable, UpdateMode.SOFT);
+        }
       }
     }
 
@@ -94,7 +97,7 @@ public abstract class HibernateDao<I extends Serializable & Comparable<I>, D ext
   @Override
   public D acquire (Class<D> durableClass, I id) {
 
-    return durableClass.cast(getSession().getNativeSession().get(durableClass, id));
+    return (id == null) ? null : durableClass.cast(getSession().getNativeSession().get(durableClass, id));
   }
 
   @Override
@@ -185,44 +188,52 @@ public abstract class HibernateDao<I extends Serializable & Comparable<I>, D ext
   @Override
   public D persist (Class<D> durableClass, D durable) {
 
-    D persistentDurable;
-    VectoredDao<I, D> vectoredDao = getVectoredDao();
+    if (durable != null) {
 
-    if (getSession().getNativeSession().contains(durable)) {
-      persistentDurable = durable;
-    } else {
-      persistentDurable = getManagedClass().cast(getSession().getNativeSession().merge(durable));
-      getSession().flush();
+      D persistentDurable;
+      VectoredDao<I, D> vectoredDao = getVectoredDao();
+
+      if (getSession().getNativeSession().contains(durable)) {
+        persistentDurable = durable;
+      } else {
+        persistentDurable = getManagedClass().cast(getSession().getNativeSession().merge(durable));
+        getSession().flush();
+      }
+
+      if (vectoredDao != null) {
+
+        return vectoredDao.persist(durableClass, persistentDurable, UpdateMode.HARD);
+      }
+
+      return persistentDurable;
     }
 
-    if (vectoredDao != null) {
-
-      return vectoredDao.persist(durableClass, persistentDurable, UpdateMode.HARD);
-    }
-
-    return persistentDurable;
+    return null;
   }
 
   @Override
   public void delete (Class<D> durableClass, D durable) {
 
-    VectoredDao<I, D> vectoredDao = getVectoredDao();
+    if (durable != null) {
 
-    if (!getSession().getNativeSession().contains(durable)) {
+      VectoredDao<I, D> vectoredDao = getVectoredDao();
 
-      D persitentDurable;
+      if (!getSession().getNativeSession().contains(durable)) {
 
-      if ((persitentDurable = getSession().getNativeSession().get(durableClass, durable.getId())) != null) {
-        getSession().getNativeSession().delete(persitentDurable);
+        D persitentDurable;
+
+        if ((persitentDurable = getSession().getNativeSession().get(durableClass, durable.getId())) != null) {
+          getSession().getNativeSession().delete(persitentDurable);
+          getSession().flush();
+        }
+      } else {
+        getSession().getNativeSession().delete(durable);
         getSession().flush();
       }
-    } else {
-      getSession().getNativeSession().delete(durable);
-      getSession().flush();
-    }
 
-    if (vectoredDao != null) {
-      vectoredDao.delete(durableClass, durable);
+      if (vectoredDao != null) {
+        vectoredDao.delete(durableClass, durable);
+      }
     }
   }
 

@@ -40,9 +40,13 @@ import org.smallmind.nutsnbolts.util.SnowflakeId;
 
 public class Block<D extends Data> {
 
+  private BlockVersion version;
   private D data;
   private Block<D> parent;
+  private byte[] target;
   private byte[] hash;
+  private double difficulty;
+  private long key;
   private long created;
 
   Block (D data)

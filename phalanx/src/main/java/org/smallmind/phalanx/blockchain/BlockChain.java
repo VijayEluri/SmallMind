@@ -7,8 +7,8 @@ public class BlockChain {
     return null;
   }
 
-  public double adjustDifficulty (long expectedTime, long actualTime) {
+  public double adjustDifficulty (long difficulty, long expectedTime, long actualTime) {
 
-    return expectedTime / ((double)actualTime);
+    return difficulty * expectedTime / ((double)actualTime);
   }
 }

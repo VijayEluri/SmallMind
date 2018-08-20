@@ -2,7 +2,7 @@ package org.smallmind.phalanx.blockchain;
 
 public enum BlockVersion {
 
-  V1 {
+  PROOF_OF_WORK_V1 {
     @Override
     public boolean validate (Block block, BlockChain blockChain) {
 

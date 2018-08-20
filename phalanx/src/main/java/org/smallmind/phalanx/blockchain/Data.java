@@ -1,6 +1,5 @@
 package org.smallmind.phalanx.blockchain;
 
-public interface Data {
+public interface Data extends Hashable {
 
-  byte[] getHash ();
 }

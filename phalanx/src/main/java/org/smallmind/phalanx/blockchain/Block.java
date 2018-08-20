@@ -32,58 +32,30 @@
  */
 package org.smallmind.phalanx.blockchain;
 
-import java.security.NoSuchAlgorithmException;
-import org.smallmind.nutsnbolts.security.EncryptionUtility;
-import org.smallmind.nutsnbolts.security.HashAlgorithm;
-import org.smallmind.nutsnbolts.util.Bytes;
-import org.smallmind.nutsnbolts.util.SnowflakeId;
+public class Block<D extends Data> implements Hashable {
 
-public class Block<D extends Data> {
-
-  private BlockVersion version;
+  private BlockHeader header;
   private D data;
-  private Block<D> parent;
-  private byte[] target;
-  private byte[] hash;
-  private double difficulty;
-  private long key;
-  private long created;
 
-  Block (D data)
-    throws NoSuchAlgorithmException {
+  public Block (BlockHeader header, D data) {
 
-    this(null, data);
+    this.header = header;
+    this.data = data;
   }
 
-  public Block (Block<D> parent, D data)
-    throws NoSuchAlgorithmException {
+  @Override
+  public byte[] getHash () {
 
-    byte[] snowflakeBytes = SnowflakeId.newInstance().asByteArray();
-    byte[] dataHash = data.getHash();
-    byte[] parentHash = (parent == null) ? null : parent.getHash();
-    byte[] hashBytes = new byte[8 + snowflakeBytes.length + dataHash.length + ((parentHash == null) ? 0 : parentHash.length)];
-
-    this.parent = parent;
-
-    created = System.currentTimeMillis();
-
-    System.arraycopy(Bytes.getBytes(created), 0, hashBytes, 0, 8);
-    System.arraycopy(snowflakeBytes, 0, hashBytes, hashBytes.length, snowflakeBytes.length);
-    System.arraycopy(dataHash, 0, hashBytes, hashBytes.length, dataHash.length);
-    if (parentHash != null) {
-      System.arraycopy(parentHash, 0, hashBytes, hashBytes.length, parentHash.length);
-    }
-
-    hash = EncryptionUtility.hash(HashAlgorithm.SHA_256, hashBytes);
+    return new byte[0];
   }
 
-  private byte[] getHash () {
+  public boolean validate (BlockChain blockChain) {
 
-    return hash;
+    return header.getVersion().validate(this, blockChain);
   }
 
   public void mineBlock () {
 
-    System.out.println("Block Mined!!! : " + hash);
+    System.out.println("Block Mined!!!");
   }
 }
